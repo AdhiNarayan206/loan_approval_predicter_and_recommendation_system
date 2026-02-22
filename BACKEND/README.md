@@ -72,7 +72,7 @@ BACKEND/
 
 **Response**:
 ```json
-"Congratulations! Your loan approval API is running."
+"Congratulations! Your LoanSense API is running."
 ```
 
 ### 2. Loan Approval Prediction
@@ -131,7 +131,7 @@ Content-Type: application/json
 **Description**: Get personalized loan recommendations using a fine-tuned LLM model through Ollama. This endpoint analyzes the user's financial profile and matches it with available bank loans from the dataset, providing intelligent recommendations with ratings and reasoning.
 
 **⚠️ Prerequisites**:
-- Ollama must be running locally on `http://localhost:11434`
+- Ollama must be running (default: `http://localhost:11434`, configurable via `OLLAMA_URL` env var)
 - Fine-tuned model `loanexplorerV2` must be loaded in Ollama
 - Bank loans dataset (`bank_loans_rs_format.csv`) must be present in `../DATASET/` directory
 
@@ -189,6 +189,14 @@ Content-Type: application/json
 **Response** (Error - Ollama unavailable):
 ```json
 {
+  "error": "Ollama is not available",
+  "message": "Cannot reach Ollama at http://localhost:11434. Start it with 'ollama serve' or set OLLAMA_URL."
+}
+```
+
+**Response** (Error - Ollama connection failure):
+```json
+{
   "error": "Failed to connect to Ollama",
   "message": "Connection refused"
 }
@@ -230,7 +238,7 @@ Content-Type: application/json
 | `self_employed` | Integer | Employment status (0: No, 1: Yes) | 0 |
 | `income_annum` | Integer | Annual income in currency units | 9600000 |
 | `loan_amount` | Integer | Requested loan amount | 29900000 |
-| `loan_term` | Integer | Loan term in years | 12 |
+| `loan_term` | Integer | Loan term in months | 12 |
 | `cibil_score` | Integer | Credit score (300-850) | 778 |
 | `residential_assets_value` | Integer | Value of residential assets | 2400000 |
 | `commercial_assets_value` | Integer | Value of commercial assets | 17600000 |
@@ -245,7 +253,7 @@ Content-Type: application/json
 The `/explore_loans` endpoint requires **Ollama running locally** with the fine-tuned `loanexplorerV2` model. This feature will **NOT work** in cloud deployments (Render, Heroku, etc.) without additional setup for remote Ollama access.
 
 **Options for AI Features in Production**:
-1. Host Ollama on a separate server and update the Ollama URL in code
+1. Host Ollama on a separate server and set `OLLAMA_URL` environment variable
 2. Use a cloud-based LLM API (e.g., OpenAI, Anthropic) as an alternative
 3. Keep AI features for local/development use only
 
@@ -285,6 +293,7 @@ gunicorn app:app
 ### Environment Variables
 
 - `PORT`: Port number (default: 5000)
+- `OLLAMA_URL`: Ollama API URL (default: `http://localhost:11434`) - useful for remote Ollama servers
 - `PYTHON_VERSION`: Python version for deployment platforms
 
 ### CORS Configuration
@@ -405,7 +414,7 @@ for loan in recommendations.get('loans', []):
 1. **Model Dependencies**: The API requires model files from `../MODEL FILE/` directory
 2. **Dataset Dependencies**: The `/explore_loans` endpoint requires `bank_loans_rs_format.csv` in `../DATASET/` directory
 3. **Ollama Setup**: The AI recommendation feature requires:
-   - Ollama installed and running on `http://localhost:11434`
+   - Ollama installed and running (default: `http://localhost:11434`, configurable via `OLLAMA_URL` env var)
    - Fine-tuned model `loanexplorerV2` loaded in Ollama
    - This is a **fine-tuned LLM model** specifically trained for loan recommendations
 4. **scikit-learn Version**: Must match the version used for training (1.5.1)
@@ -430,6 +439,7 @@ for loan in recommendations.get('loans', []):
    - Check if `loanexplorerV2` model is loaded: `ollama list`
    - Start Ollama if not running: `ollama serve`
    - Load the model if needed: `ollama pull loanexplorerV2` (or load your fine-tuned model)
+   - For remote Ollama: set `OLLAMA_URL` environment variable
 
 4. **Import errors**:
    - Verify all requirements are installed: `pip install -r requirements.txt`
@@ -465,7 +475,8 @@ for loan in recommendations.get('loans', []):
 - **Fine-tuned LLM Integration**: The `loanexplorerV2` model is a custom fine-tuned language model running through Ollama, specifically trained to understand financial data and provide intelligent loan recommendations
 - AI recommendations use temperature=0.0 for consistent, deterministic outputs
 - The LLM is prompted with structured data to ensure JSON-formatted responses
-- Timeout set to 120 seconds for LLM API calls to handle processing time
+- Timeout set to 150 seconds for LLM API calls to handle processing time
+- `num_predict` set to 3072 tokens to ensure complete 5-loan recommendations
 
 ## 🤖 About the Fine-Tuned LLM Model
 

@@ -22,8 +22,8 @@ function App() {
         <nav className="navbar">
           <div className="nav-container">
             <Link to="/" className="nav-logo">
-              <img src="/logo.jpeg" alt="Loan Approval Logo" className="nav-logo-img" />
-              <h5 className='logoname'>LOAN APPROVAL</h5>
+              <img src="/logo.jpeg" alt="LoanSense Logo" className="nav-logo-img" />
+              <h5 className='logoname'>LOANSENSE</h5>
             </Link>
             <ul className="nav-menu">
               <li className="nav-item">
