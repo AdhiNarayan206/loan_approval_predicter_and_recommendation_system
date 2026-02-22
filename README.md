@@ -63,6 +63,53 @@ The system uses two trained models:
 - **Random Forest**: Alternative model with ensemble learning
 - **Feature Scaling**: StandardScaler for data normalization
 
+## 🤖 AI-Powered Loan Exploration
+
+The system features an intelligent loan recommendation engine powered by a **fine-tuned LLM model (loanexplorerV2)** running through **Ollama**.
+
+### How It Works
+
+1. **User Profile Analysis**: The LLM receives the user's complete financial profile (income, CIBIL score, assets, loan requirements)
+2. **Loan Matching**: It analyzes 100+ bank loans from the curated dataset (`bank_loans_rs_format.csv`)
+3. **Intelligent Filtering**: Filters loans by the requested loan type (Home, Car, Personal, Education, etc.)
+4. **Personalized Ranking**: Rates each loan 1-10 based on:
+   - Match with user's loan type requirement
+   - Interest rate suitability for user's profile
+   - User's eligibility based on CIBIL score and income
+   - Loan amount compatibility
+5. **Top 5 Recommendations**: Returns the 5 most suitable loans with detailed reasoning
+
+### Key Features
+
+- **Fine-Tuned Model**: Custom trained on financial and loan-specific data
+- **Deterministic Output**: Uses temperature=0.0 for consistent recommendations
+- **Structured JSON Response**: Reliable, parseable output format
+- **Direct Bank Links**: Includes links to bank loan pages when available
+- **Local Processing**: Runs via Ollama for privacy and control
+
+### Setting Up Ollama for AI Features
+
+1. **Install Ollama**: Download from [ollama.ai](https://ollama.ai)
+2. **Start Ollama service**:
+   ```bash
+   ollama serve
+   ```
+3. **Load the fine-tuned model**:
+   ```bash
+   ollama create loanexplorerV2 -f Modelfile
+   ```
+4. **Verify setup**:
+   ```bash
+   curl http://localhost:11434/api/tags
+   ```
+
+### Remote Ollama Configuration
+
+For production or remote deployments, set the `OLLAMA_URL` environment variable:
+```bash
+export OLLAMA_URL=http://your-ollama-server:11434
+```
+
 ## 🔌 API Usage
 
 ### Health Check
@@ -111,9 +158,22 @@ Get personalized loan recommendations using a fine-tuned LLM model through Ollam
 - Ollama running (default: `http://localhost:11434`, configurable via `OLLAMA_URL`)
 - Fine-tuned model `loanexplorerV2` loaded in Ollama
 
-**Request Body:** Same as `/predict` endpoint
+**Request Body:** Same as `/predict` endpoint (include `loan_type` for best results)
 
-**Response:**
+**Response Fields:**
+
+| Field | Description |
+|-------|-------------|
+| `bank_name` | Name of the recommending bank |
+| `loan_type` | Type of loan offered |
+| `max_amount` | Maximum loan amount available |
+| `repayment_time` | Loan repayment duration |
+| `interest_rate` | Interest rate or "See website" |
+| `rating` | Suitability score (1-10) based on user profile |
+| `reason` | Personalized explanation for the recommendation |
+| `link` | Direct link to bank's loan page (when available) |
+
+**Success Response:**
 ```json
 {
   "loans": [
@@ -130,6 +190,11 @@ Get personalized loan recommendations using a fine-tuned LLM model through Ollam
   ]
 }
 ```
+
+**Error Responses:**
+- `503`: Ollama unavailable - `{"error": "Ollama is not available", "message": "..."}`
+- `500`: Connection failure - `{"error": "Failed to connect to Ollama", "message": "..."}`
+- `400`: Invalid input - `{"error": "Failed to process request", "message": "..."}`
 
 ## 🌐 Deployment
 
