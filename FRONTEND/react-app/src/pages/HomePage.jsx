@@ -10,10 +10,10 @@ const HomePage = () => {
           <div className="hero-content">
 
             <h1 className="hero-title">
-              Loan Approval Predictor
+              Smart Decisions<br />Better Loans
             </h1>
             <p className="hero-subtitle">
-              Get instant loan approval predictions using advanced machine learning algorithms
+              Get instant loan eligibility predictions using advanced machine learning algorithms
             </p>
             <div className="hero-buttons">
               <Link to="/predictor" className="cta-button primary">
@@ -84,6 +84,14 @@ const HomePage = () => {
               <div className="step-number">3</div>
               <h3>Get Results</h3>
               <p>View your loan approval prediction with confidence score</p>
+            </div>
+            <div className="step-arrow">
+              <i className="fas fa-arrow-right"></i>
+            </div>
+            <div className="step">
+              <div className="step-number">4</div>
+              <h3>Explore Loans</h3>
+              <p>AI finds your perfect match from thousands of loan options</p>
             </div>
           </div>
         </section>

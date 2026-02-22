@@ -3,6 +3,7 @@ import joblib
 import numpy as np
 import os
 from flask_cors import CORS
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -16,9 +17,19 @@ scaler_path = os.path.join(current_dir, '..', 'MODEL FILE', 'scaler.joblib')
 model = joblib.load(model_path)
 scaler = joblib.load(scaler_path)
 
+# Ollama configuration (override via env var if running remotely)
+OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
+
+def _ollama_available() -> bool:
+    try:
+        r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=3)
+        return r.status_code == 200
+    except Exception:
+        return False
+
 @app.route('/')
 def hello():
-    return "Congratulations! Your loan approval API is running."
+    return "Congratulations! Your LoanSense API is running."
 
 @app.route('/predict', methods=['POST'])
 def check_eligibility():
@@ -37,7 +48,8 @@ def check_eligibility():
             data['luxury_assets_value'],
             data['bank_asset_value']
         ]
-        loan_type = data['loan_type']
+        # Optional: loan_type is not required for prediction; use .get to avoid 400s when omitted
+        loan_type = data.get('loan_type')
         final_features = np.array(features).reshape(1, -1)
         scaled_features = scaler.transform(final_features)
         prediction = model.predict(scaled_features)
@@ -46,12 +58,12 @@ def check_eligibility():
         confidence=prediction_proba[0][prediction[0]]
         return jsonify({'prediction': output, 'confidence': float(confidence)})
     except Exception as e:
+        # Return error details to help debug bad inputs (e.g., missing/invalid fields)
         return jsonify({'error': 'Invalid input format', 'message': str(e)}), 400
 
 @app.route('/explore_loans', methods=['POST'])
 def explore_loans():
     try:
-        import requests
         import pandas as pd
         import json
 
@@ -96,7 +108,7 @@ def explore_loans():
         # Prepare prompt for Ollama
         # Pass the loans as JSON so the LLM can use all fields
         loans_json = json.dumps(loans_list, ensure_ascii=False)
-        prompt = f"""You are a financial advisor AI. Based on the user's financial profile and the available bank loans, recommend the TOP 5 most suitable loans with a rating out of 10 for each.
+        prompt = f"""You are a financial advisor AI. Based on the user's financial profile and the available bank loans, recommend EXACTLY 5 most suitable loans with a rating out of 10 for each.
 
 USER FINANCIAL PROFILE:
 {user_details}
@@ -105,10 +117,11 @@ AVAILABLE BANK LOANS (JSON):
 {loans_json}
 
 CRITICAL INSTRUCTIONS:
-1. The user specifically needs: "{loan_type}" - ONLY recommend loans matching this type
-2. Analyze the user's income ({data['income_annum']:,}), CIBIL score ({data['cibil_score']}), and assets
-3. Select the 5 most suitable "{loan_type}" loans from the available options
-4. Rate each loan from 1-10 based on:
+1. You MUST return EXACTLY 5 loans - no more, no less
+2. The user specifically needs: "{loan_type}" - ONLY recommend loans matching this type
+3. Analyze the user's income ({data['income_annum']:,}), CIBIL score ({data['cibil_score']}), and assets
+4. Select the 5 most suitable "{loan_type}" loans from the available options
+5. Rate each loan from 1-10 based on:
      - How well it matches the user's loan type requirement (MOST IMPORTANT)
      - Interest rates and repayment terms suitability
      - User's eligibility based on CIBIL score and income
@@ -133,20 +146,24 @@ IMPORTANT: Return ONLY a valid JSON object with this exact structure (no markdow
 }}"""
 
         # Call Ollama API
+        # Check Ollama availability first for clearer error
+        if not _ollama_available():
+            return jsonify({'error': 'Ollama is not available', 'message': f'Cannot reach Ollama at {OLLAMA_URL}. Start it with "ollama serve" or set OLLAMA_URL.'}), 503
+
         print("Calling Ollama API...")  # Debug
         try:
             ollama_response = requests.post(
-                'http://localhost:11434/api/generate',
+                f'{OLLAMA_URL}/api/generate',
                 json={
                     'model': 'loanexplorerV2',
                     'prompt': prompt,
                     'stream': False,
                     'options': {
                         'temperature': 0.0,
-                        'num_predict': 1024
+                        'num_predict': 3072  # Increased further to ensure all 5 loans fit
                     }
                 },
-                timeout=120
+                timeout=150  # Increased timeout for longer generation
             )
             print(f"Ollama response status: {ollama_response.status_code}")  # Debug
             print(f"Ollama raw response: {ollama_response.text}")  # Debug

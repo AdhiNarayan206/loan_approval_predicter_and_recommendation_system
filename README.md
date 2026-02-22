@@ -1,10 +1,10 @@
 # Loan Approval Prediction System
 
-A complete machine learning system for predicting loan approval decisions using logistic regression and random forest models.
+A complete machine learning system for predicting loan approval decisions using logistic regression and random forest models, with AI-powered loan recommendations.
 
 ## 🎯 Project Overview
 
-This project implements an end-to-end loan approval prediction system that helps financial institutions make data-driven lending decisions. The system includes data preprocessing, model training, and a REST API for real-time predictions.
+This project implements an end-to-end loan approval prediction system that helps financial institutions make data-driven lending decisions. The system includes data preprocessing, model training, a REST API for real-time predictions, and AI-powered loan recommendations using a fine-tuned LLM model.
 
 ## 🏗️ Project Structure
 
@@ -12,7 +12,8 @@ This project implements an end-to-end loan approval prediction system that helps
 loan_approval_predicter/
 ├── BACKEND/                    # Flask API for predictions
 ├── DATA PREPROCESSING AND MODEL TRAINING/  # Jupyter notebooks for ML pipeline
-├── DATASET/                    # Raw data files
+├── DATASET/                    # Raw data files and bank loans database
+├── FRONTEND/                   # React frontend application
 ├── MODEL FILE/                 # Trained models and scalers
 └── README.md                   # This file
 ```
@@ -20,8 +21,10 @@ loan_approval_predicter/
 ## ✨ Features
 
 - **Machine Learning Models**: Logistic Regression and Random Forest classifiers
+- **AI-Powered Loan Recommendations**: Fine-tuned LLM model (loanexplorerV2) via Ollama
 - **Data Preprocessing**: Feature scaling, encoding, and cleaning
 - **REST API**: Flask-based API for real-time loan approval predictions
+- **React Frontend**: Modern UI for loan prediction and exploration
 - **Cross-platform Deployment**: Compatible with cloud platforms like Render, Heroku
 - **CORS Support**: Frontend integration ready
 
@@ -62,6 +65,12 @@ The system uses two trained models:
 
 ## 🔌 API Usage
 
+### Health Check
+
+**GET** `/`
+
+**Response:** `"Congratulations! Your LoanSense API is running."`
+
 ### Prediction Endpoint
 
 **POST** `/predict`
@@ -79,7 +88,8 @@ The system uses two trained models:
   "residential_assets_value": 2400000,
   "commercial_assets_value": 17600000,
   "luxury_assets_value": 22700000,
-  "bank_asset_value": 8000000
+  "bank_asset_value": 8000000,
+  "loan_type": "Home Loan"
 }
 ```
 
@@ -88,6 +98,36 @@ The system uses two trained models:
 {
   "prediction": "Approved",
   "confidence": 0.85
+}
+```
+
+### AI Loan Recommendations 🤖
+
+**POST** `/explore_loans`
+
+Get personalized loan recommendations using a fine-tuned LLM model through Ollama.
+
+**Prerequisites:**
+- Ollama running (default: `http://localhost:11434`, configurable via `OLLAMA_URL`)
+- Fine-tuned model `loanexplorerV2` loaded in Ollama
+
+**Request Body:** Same as `/predict` endpoint
+
+**Response:**
+```json
+{
+  "loans": [
+    {
+      "bank_name": "State Bank of India",
+      "loan_type": "Home Loan",
+      "max_amount": "Up to Rs. 5 Crore",
+      "repayment_time": "Up to 30 years",
+      "interest_rate": "8.50% - 9.65%",
+      "rating": 9.5,
+      "reason": "Best match for your income level and CIBIL score.",
+      "link": "https://www.sbi.co.in/home-loans"
+    }
+  ]
 }
 ```
 
@@ -103,21 +143,25 @@ The system uses two trained models:
 
 ### Environment Variables
 
-- `PORT`: Automatically set by hosting platforms
+- `PORT`: Server port (default: 5000, automatically set by hosting platforms)
+- `OLLAMA_URL`: Ollama API URL (default: `http://localhost:11434`)
 - `PYTHON_VERSION`: For specifying Python version on deployment
 
 ## 📁 Directory Details
 
 - **[BACKEND/](./BACKEND/)**: Flask API server and deployment files
 - **[DATA PREPROCESSING AND MODEL TRAINING/](./DATA%20PREPROCESSING%20AND%20MODEL%20TRAINING/)**: Jupyter notebooks for data analysis and model training
-- **[DATASET/](./DATASET/)**: Raw loan approval dataset
+- **[DATASET/](./DATASET/)**: Raw loan approval dataset and bank loans database
+- **[FRONTEND/](./FRONTEND/)**: React frontend application with Vite
 - **[MODEL FILE/](./MODEL%20FILE/)**: Trained model files and preprocessing objects
 
 ## 🛠️ Technology Stack
 
 - **Backend**: Flask, Gunicorn
 - **Machine Learning**: scikit-learn, joblib
+- **AI/LLM**: Ollama with fine-tuned loanexplorerV2 model
 - **Data Processing**: pandas, numpy
+- **Frontend**: React (Vite)
 - **Frontend Integration**: Flask-CORS
 - **Deployment**: Render, Heroku compatible
 
@@ -142,6 +186,9 @@ The model uses the following features for prediction:
    - Luxury assets value
    - Bank asset value
 
+4. **Loan Preferences** (for AI recommendations)
+   - Loan type (Home Loan, Car Loan, Personal Loan, etc.)
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -164,7 +211,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Dataset source and preprocessing techniques
 - scikit-learn community for excellent ML tools
 - Flask community for web framework support
+- Ollama team for local LLM runtime
 
 ---
 
-**Note**: This is a demonstration project for educational purposes. For production use in financial institutions, additional validation, security measures, and compliance checks would be required.
+**Note**: This is a demonstration project for educational purposes. For production use in financial institutions, additional validation, security measures, and compliance checks would be required. The AI-powered loan recommendations (`/explore_loans` endpoint) require Ollama running locally with the fine-tuned model.
