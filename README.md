@@ -1,4 +1,4 @@
-# Loan Approval Prediction System
+# Loan Approval Prediction and Recommendation System
 
 A complete machine learning system for predicting loan approval decisions using logistic regression and random forest models, with AI-powered loan recommendations.
 
